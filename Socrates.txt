@@ -1,0 +1,476 @@
+-- ══════════════════════════════════════════════════════
+--              ERVO DRAGON DUPER
+--         Ervo Hub visual theme · Full UI
+-- ══════════════════════════════════════════════════════
+
+local Players          = game:GetService("Players")
+local RunService       = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService     = game:GetService("TweenService")
+local Stats            = game:GetService("Stats")
+local player           = Players.LocalPlayer
+local isTouch          = UserInputService.TouchEnabled
+
+local C = {
+    bg        = Color3.fromRGB(10,  10,  10),
+    white     = Color3.fromRGB(255, 255, 255),
+    lightGray = Color3.fromRGB(200, 200, 200),
+    midGray   = Color3.fromRGB(150, 150, 150),
+    darkGray  = Color3.fromRGB(35,  35,  35),
+    border    = Color3.fromRGB(60,  60,  60),
+    green     = Color3.fromRGB(80,  220, 120),
+    red       = Color3.fromRGB(230,  70,  70),
+}
+local FONT = Enum.Font.GothamBold
+
+local function attachAnimStroke(parent)
+    local s = Instance.new("UIStroke", parent)
+    s.Thickness = 2
+    local g = Instance.new("UIGradient", s)
+    g.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0,    Color3.fromRGB(200,200,200)),
+        ColorSequenceKeypoint.new(0.25, Color3.fromRGB(30, 30, 30)),
+        ColorSequenceKeypoint.new(0.5,  Color3.fromRGB(150,150,150)),
+        ColorSequenceKeypoint.new(0.75, Color3.fromRGB(30, 30, 30)),
+        ColorSequenceKeypoint.new(1,    Color3.fromRGB(200,200,200)),
+    })
+    task.spawn(function()
+        while s and s.Parent do g.Rotation = (g.Rotation + 3) % 360; task.wait(0.02) end
+    end)
+    return s
+end
+
+local function spawnParticleDots(parent, count, minSz, maxSz)
+    local rng = Random.new(math.random(1, 9999))
+    for _ = 1, count do
+        local d = Instance.new("Frame", parent)
+        local sz = rng:NextInteger(minSz, maxSz)
+        d.Size = UDim2.new(0, sz, 0, sz); d.BorderSizePixel = 0
+        d.BackgroundColor3 = Color3.fromRGB(150,150,150)
+        local sx = rng:NextNumber(0.02, 0.98); local sy = rng:NextNumber(0.02, 0.98)
+        d.Position = UDim2.new(sx, 0, sy, 0)
+        d.BackgroundTransparency = rng:NextNumber(0.1, 0.4)
+        d.ZIndex = (parent.ZIndex or 1) + 1
+        Instance.new("UICorner", d).CornerRadius = UDim.new(1, 0)
+        local ph = rng:NextNumber() * math.pi * 2; local sm = 0.3 + rng:NextNumber() * 0.4
+        task.spawn(function()
+            while d.Parent do
+                local t = tick() + ph
+                d.Position = UDim2.new(math.clamp(sx+math.sin(t*sm)*0.015,0.01,0.99),0,math.clamp(sy+math.cos(t*sm*0.8)*0.012,0.01,0.99),0)
+                d.BackgroundTransparency = 0.2 + math.sin(t*1.5+ph)*0.25
+                task.wait(0.03)
+            end
+        end)
+    end
+end
+
+local function makeDraggable(frame)
+    local drag, ds, sp = false, nil, nil
+    frame.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            drag = true; ds = i.Position; sp = frame.Position
+            i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then drag = false end end)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            local d = i.Position - ds
+            frame.Position = UDim2.new(sp.X.Scale, sp.X.Offset + d.X, sp.Y.Scale, sp.Y.Offset + d.Y)
+        end
+    end)
+end
+
+local sg = Instance.new("ScreenGui")
+sg.Name = "ERVO_DRAGON_DUPER"; sg.ResetOnSpawn = false
+sg.IgnoreGuiInset = true; sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+sg.Parent = player:WaitForChild("PlayerGui")
+
+local PANEL_W = isTouch and 240 or 260
+local PANEL_H = isTouch and 222 or 230
+
+local mainGui = Instance.new("Frame", sg)
+mainGui.Name = "MainPanel"
+mainGui.Size = UDim2.new(0, PANEL_W, 0, PANEL_H)
+mainGui.Position = UDim2.new(0.5, -PANEL_W/2, 0.5, -PANEL_H/2)
+mainGui.BackgroundColor3 = C.bg; mainGui.BackgroundTransparency = 0
+mainGui.BorderSizePixel = 0; mainGui.Visible = false
+Instance.new("UICorner", mainGui).CornerRadius = UDim.new(0, 16)
+attachAnimStroke(mainGui); spawnParticleDots(mainGui, 18, 2, 3); makeDraggable(mainGui)
+
+local headerBar = Instance.new("Frame", mainGui)
+headerBar.Size = UDim2.new(1, 0, 0, 38)
+headerBar.BackgroundColor3 = Color3.fromRGB(16,16,16)
+headerBar.BorderSizePixel = 0; headerBar.ZIndex = 5
+Instance.new("UICorner", headerBar).CornerRadius = UDim.new(0, 16)
+local hFill = Instance.new("Frame", headerBar)
+hFill.Size = UDim2.new(1,0,0.5,0); hFill.Position = UDim2.new(0,0,0.5,0)
+hFill.BackgroundColor3 = Color3.fromRGB(16,16,16); hFill.BorderSizePixel = 0; hFill.ZIndex = 4
+
+local headerTitle = Instance.new("TextLabel", headerBar)
+headerTitle.Size = UDim2.new(1, 0, 1, 0); headerTitle.Position = UDim2.new(0, 0, 0, 0)
+headerTitle.BackgroundTransparency = 1; headerTitle.Text = "✨ ERVO DRAGON DUPER"
+headerTitle.Font = Enum.Font.GothamBlack; headerTitle.TextSize = isTouch and 11 or 12
+headerTitle.TextColor3 = C.white; headerTitle.TextXAlignment = Enum.TextXAlignment.Center; headerTitle.ZIndex = 6
+task.spawn(function()
+    while headerTitle.Parent do headerTitle.TextTransparency = 0.05 + math.abs(math.sin(tick()*0.8))*0.08; task.wait(0.03) end
+end)
+
+local minBtn = Instance.new("TextButton", headerBar)
+minBtn.Size = UDim2.new(0,24,0,24); minBtn.Position = UDim2.new(1,-54,0.5,-12)
+minBtn.BackgroundColor3 = C.darkGray; minBtn.Text = "−"; minBtn.TextColor3 = C.lightGray
+minBtn.Font = Enum.Font.GothamBlack; minBtn.TextSize = 14; minBtn.BorderSizePixel = 0; minBtn.ZIndex = 7
+Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 6)
+local minStroke = Instance.new("UIStroke", minBtn); minStroke.Thickness = 1; minStroke.Color = C.border
+minBtn.MouseEnter:Connect(function() minBtn.BackgroundColor3 = Color3.fromRGB(55,55,55) end)
+minBtn.MouseLeave:Connect(function() minBtn.BackgroundColor3 = C.darkGray end)
+
+local closeBtn = Instance.new("TextButton", headerBar)
+closeBtn.Size = UDim2.new(0,24,0,24); closeBtn.Position = UDim2.new(1,-26,0.5,-12)
+closeBtn.BackgroundColor3 = Color3.fromRGB(80,22,22); closeBtn.Text = "❌"
+closeBtn.TextColor3 = Color3.fromRGB(220,100,100); closeBtn.Font = Enum.Font.GothamBlack
+closeBtn.TextSize = 11; closeBtn.BorderSizePixel = 0; closeBtn.ZIndex = 7
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+local closeStroke = Instance.new("UIStroke", closeBtn); closeStroke.Thickness = 1; closeStroke.Color = Color3.fromRGB(120,40,40)
+closeBtn.MouseEnter:Connect(function() closeBtn.BackgroundColor3 = Color3.fromRGB(120,30,30) end)
+closeBtn.MouseLeave:Connect(function() closeBtn.BackgroundColor3 = Color3.fromRGB(80,22,22) end)
+closeBtn.MouseButton1Click:Connect(function()
+    TweenService:Create(mainGui, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency=1}):Play()
+    task.wait(0.3); sg:Destroy()
+end)
+
+local PAD = 12; local CW = PANEL_W - PAD * 2
+local content = Instance.new("Frame", mainGui)
+content.Size = UDim2.new(0, CW, 0, PANEL_H - 50); content.Position = UDim2.new(0, PAD, 0, 44)
+content.BackgroundTransparency = 1; content.BorderSizePixel = 0; content.ZIndex = 5
+
+local yOff = 0
+local function nextY(h, gap) local y = yOff; yOff = yOff + h + (gap or 8); return y end
+
+local function makeSectionLbl(text, xOff, w)
+    local lbl = Instance.new("TextLabel", content)
+    lbl.Size = UDim2.new(0, w, 0, 14); lbl.Position = UDim2.new(0, xOff, 0, yOff)
+    lbl.BackgroundTransparency = 1; lbl.Text = text; lbl.Font = FONT
+    lbl.TextSize = 9; lbl.TextColor3 = C.midGray
+    lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.ZIndex = 6
+    return lbl
+end
+
+local DD_GAP = 6
+local DD_LEFT_W = math.floor(CW * 0.60)
+local DD_RIGHT_W = CW - DD_LEFT_W - DD_GAP
+
+makeSectionLbl("SELECT BRAINROT", 0, DD_LEFT_W)
+makeSectionLbl("AMOUNT", DD_LEFT_W + DD_GAP, DD_RIGHT_W)
+yOff = yOff + 14 + 4
+
+local DD_OPTIONS = {"Dragon Canneloni", "OG"}
+local ddSelected = 1; local ddOpen = false
+local ddY = nextY(30, 8)
+
+local ddTrigger = Instance.new("TextButton", content)
+ddTrigger.Size = UDim2.new(0, DD_LEFT_W, 0, 30); ddTrigger.Position = UDim2.new(0, 0, 0, ddY)
+ddTrigger.BackgroundColor3 = C.darkGray; ddTrigger.BorderSizePixel = 0
+ddTrigger.Text = ""; ddTrigger.AutoButtonColor = false; ddTrigger.ZIndex = 8
+Instance.new("UICorner", ddTrigger).CornerRadius = UDim.new(0, 8)
+local ddStroke = Instance.new("UIStroke", ddTrigger); ddStroke.Thickness = 1; ddStroke.Color = C.border
+
+local ddLabel = Instance.new("TextLabel", ddTrigger)
+ddLabel.Size = UDim2.new(1,-22,1,0); ddLabel.Position = UDim2.new(0,8,0,0)
+ddLabel.BackgroundTransparency = 1; ddLabel.Text = DD_OPTIONS[ddSelected]
+ddLabel.Font = Enum.Font.GothamBlack; ddLabel.TextSize = 9; ddLabel.TextColor3 = C.white
+ddLabel.TextXAlignment = Enum.TextXAlignment.Left; ddLabel.ZIndex = 9
+
+local ddArrow = Instance.new("TextLabel", ddTrigger)
+ddArrow.Size = UDim2.new(0,16,1,0); ddArrow.Position = UDim2.new(1,-18,0,0)
+ddArrow.BackgroundTransparency = 1; ddArrow.Text = "↓"; ddArrow.Font = FONT
+ddArrow.TextSize = 11; ddArrow.TextColor3 = C.midGray; ddArrow.ZIndex = 9
+
+local ddList = Instance.new("Frame", content)
+ddList.Size = UDim2.new(0, DD_LEFT_W, 0, #DD_OPTIONS * 30 + 4)
+ddList.Position = UDim2.new(0, 0, 0, ddY + 32)
+ddList.BackgroundColor3 = Color3.fromRGB(18,18,18); ddList.BorderSizePixel = 0
+ddList.Visible = false; ddList.ZIndex = 20
+Instance.new("UICorner", ddList).CornerRadius = UDim.new(0, 8)
+local ddListStroke = Instance.new("UIStroke", ddList); ddListStroke.Thickness = 1; ddListStroke.Color = C.border
+
+for i, opt in ipairs(DD_OPTIONS) do
+    local item = Instance.new("TextButton", ddList)
+    item.Size = UDim2.new(1,-8,0,26); item.Position = UDim2.new(0,4,0,(i-1)*28+2)
+    item.BackgroundColor3 = Color3.fromRGB(22,22,22); item.Text = opt
+    item.Font = Enum.Font.GothamBold; item.TextSize = 10; item.TextColor3 = C.lightGray
+    item.AutoButtonColor = false; item.BorderSizePixel = 0; item.ZIndex = 21
+    Instance.new("UICorner", item).CornerRadius = UDim.new(0, 6)
+    item.MouseEnter:Connect(function() TweenService:Create(item,TweenInfo.new(0.12),{BackgroundColor3=Color3.fromRGB(40,40,40)}):Play(); item.TextColor3=C.white end)
+    item.MouseLeave:Connect(function() TweenService:Create(item,TweenInfo.new(0.12),{BackgroundColor3=Color3.fromRGB(22,22,22)}):Play(); item.TextColor3=C.lightGray end)
+    item.MouseButton1Click:Connect(function()
+        ddSelected = i; ddLabel.Text = DD_OPTIONS[i]; ddOpen = false; ddList.Visible = false; ddArrow.Text = "↓"
+        TweenService:Create(ddTrigger, TweenInfo.new(0.15), {BackgroundColor3=C.darkGray}):Play()
+    end)
+end
+ddTrigger.MouseButton1Click:Connect(function()
+    ddOpen = not ddOpen; ddList.Visible = ddOpen; ddArrow.Text = ddOpen and "↑" or "↓"
+    TweenService:Create(ddTrigger, TweenInfo.new(0.15), {BackgroundColor3 = ddOpen and Color3.fromRGB(45,45,45) or C.darkGray}):Play()
+end)
+
+local AMT_OPTIONS = {"1", "2", "3", "4", "5"}
+local amtSelected = 1; local amtOpen = false
+
+local amtTrigger = Instance.new("TextButton", content)
+amtTrigger.Size = UDim2.new(0, DD_RIGHT_W, 0, 30); amtTrigger.Position = UDim2.new(0, DD_LEFT_W + DD_GAP, 0, ddY)
+amtTrigger.BackgroundColor3 = C.darkGray; amtTrigger.BorderSizePixel = 0
+amtTrigger.Text = ""; amtTrigger.AutoButtonColor = false; amtTrigger.ZIndex = 8
+Instance.new("UICorner", amtTrigger).CornerRadius = UDim.new(0, 8)
+local amtStroke = Instance.new("UIStroke", amtTrigger); amtStroke.Thickness = 1; amtStroke.Color = C.border
+
+local amtLabel = Instance.new("TextLabel", amtTrigger)
+amtLabel.Size = UDim2.new(1,-18,1,0); amtLabel.Position = UDim2.new(0,6,0,0)
+amtLabel.BackgroundTransparency = 1; amtLabel.Text = AMT_OPTIONS[amtSelected]
+amtLabel.Font = Enum.Font.GothamBlack; amtLabel.TextSize = 11; amtLabel.TextColor3 = C.white
+amtLabel.TextXAlignment = Enum.TextXAlignment.Center; amtLabel.ZIndex = 9
+
+local amtArrow = Instance.new("TextLabel", amtTrigger)
+amtArrow.Size = UDim2.new(0,14,1,0); amtArrow.Position = UDim2.new(1,-15,0,0)
+amtArrow.BackgroundTransparency = 1; amtArrow.Text = "↓"; amtArrow.Font = FONT
+amtArrow.TextSize = 10; amtArrow.TextColor3 = C.midGray; amtArrow.ZIndex = 9
+
+local amtList = Instance.new("Frame", content)
+amtList.Size = UDim2.new(0, DD_RIGHT_W, 0, #AMT_OPTIONS * 26 + 4)
+amtList.Position = UDim2.new(0, DD_LEFT_W + DD_GAP, 0, ddY + 32)
+amtList.BackgroundColor3 = Color3.fromRGB(18,18,18); amtList.BorderSizePixel = 0
+amtList.Visible = false; amtList.ZIndex = 20
+Instance.new("UICorner", amtList).CornerRadius = UDim.new(0, 8)
+local amtListStroke = Instance.new("UIStroke", amtList); amtListStroke.Thickness = 1; amtListStroke.Color = C.border
+
+for i, opt in ipairs(AMT_OPTIONS) do
+    local item = Instance.new("TextButton", amtList)
+    item.Size = UDim2.new(1,-8,0,22); item.Position = UDim2.new(0,4,0,(i-1)*25+2)
+    item.BackgroundColor3 = Color3.fromRGB(22,22,22); item.Text = opt
+    item.Font = Enum.Font.GothamBold; item.TextSize = 10; item.TextColor3 = C.lightGray
+    item.AutoButtonColor = false; item.BorderSizePixel = 0; item.ZIndex = 21
+    Instance.new("UICorner", item).CornerRadius = UDim.new(0, 6)
+    item.MouseEnter:Connect(function() TweenService:Create(item,TweenInfo.new(0.12),{BackgroundColor3=Color3.fromRGB(40,40,40)}):Play(); item.TextColor3=C.white end)
+    item.MouseLeave:Connect(function() TweenService:Create(item,TweenInfo.new(0.12),{BackgroundColor3=Color3.fromRGB(22,22,22)}):Play(); item.TextColor3=C.lightGray end)
+    item.MouseButton1Click:Connect(function()
+        amtSelected = i; amtLabel.Text = AMT_OPTIONS[i]; amtOpen = false; amtList.Visible = false; amtArrow.Text = "↓"
+        TweenService:Create(amtTrigger, TweenInfo.new(0.15), {BackgroundColor3=C.darkGray}):Play()
+    end)
+end
+amtTrigger.MouseButton1Click:Connect(function()
+    amtOpen = not amtOpen; amtList.Visible = amtOpen; amtArrow.Text = amtOpen and "↑" or "↓"
+    TweenService:Create(amtTrigger, TweenInfo.new(0.15), {BackgroundColor3 = amtOpen and Color3.fromRGB(45,45,45) or C.darkGray}):Play()
+end)
+
+local pingY = nextY(24, 10)
+local pingBg = Instance.new("Frame", content)
+pingBg.Size = UDim2.new(1,0,0,24); pingBg.Position = UDim2.new(0,0,0,pingY)
+pingBg.BackgroundColor3 = Color3.fromRGB(12,26,16); pingBg.BorderSizePixel = 0; pingBg.ZIndex = 6
+Instance.new("UICorner", pingBg).CornerRadius = UDim.new(0, 7)
+local pingStroke = Instance.new("UIStroke", pingBg); pingStroke.Thickness = 1; pingStroke.Color = Color3.fromRGB(30,70,40)
+
+local pingDot = Instance.new("Frame", pingBg)
+pingDot.Size = UDim2.new(0,7,0,7); pingDot.Position = UDim2.new(0,9,0.5,-3)
+pingDot.BackgroundColor3 = C.green; pingDot.BorderSizePixel = 0; pingDot.ZIndex = 7
+Instance.new("UICorner", pingDot).CornerRadius = UDim.new(1, 0)
+task.spawn(function()
+    while pingDot.Parent do
+        TweenService:Create(pingDot,TweenInfo.new(0.6),{BackgroundTransparency=0.5}):Play(); task.wait(0.65)
+        TweenService:Create(pingDot,TweenInfo.new(0.6),{BackgroundTransparency=0}):Play(); task.wait(0.65)
+    end
+end)
+
+local pingLabel = Instance.new("TextLabel", pingBg)
+pingLabel.Size = UDim2.new(1,-22,1,0); pingLabel.Position = UDim2.new(0,22,0,0)
+pingLabel.BackgroundTransparency = 1; pingLabel.Font = Enum.Font.GothamBlack; pingLabel.TextSize = 10
+pingLabel.TextColor3 = C.green; pingLabel.TextXAlignment = Enum.TextXAlignment.Left; pingLabel.ZIndex = 7; pingLabel.Text = "PING: -- ms"
+task.spawn(function()
+    while pingLabel.Parent do
+        local ok, ping = pcall(function() return math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()) end)
+        if ok and type(ping) == "number" then
+            pingLabel.Text = "PING: " .. ping .. " ms"
+            local col = ping < 80 and C.green or ping < 150 and Color3.fromRGB(220,200,60) or C.red
+            pingLabel.TextColor3 = col; pingDot.BackgroundColor3 = col
+        end
+        task.wait(2)
+    end
+end)
+
+local dupeY = nextY(42, 8)
+local dupeBg = Instance.new("Frame", content)
+dupeBg.Size = UDim2.new(1,0,0,42); dupeBg.Position = UDim2.new(0,0,0,dupeY)
+dupeBg.BackgroundColor3 = C.darkGray; dupeBg.BorderSizePixel = 0; dupeBg.ZIndex = 6
+Instance.new("UICorner", dupeBg).CornerRadius = UDim.new(0, 10)
+attachAnimStroke(dupeBg); spawnParticleDots(dupeBg, 8, 2, 3)
+
+local dupeBtn = Instance.new("TextButton", dupeBg)
+dupeBtn.Size = UDim2.new(1,-10,1,-10); dupeBtn.Position = UDim2.new(0,5,0,5)
+dupeBtn.BackgroundTransparency = 1; dupeBtn.Text = "DUPE"
+dupeBtn.Font = Enum.Font.GothamBlack; dupeBtn.TextSize = 14
+dupeBtn.TextColor3 = C.lightGray; dupeBtn.BorderSizePixel = 0; dupeBtn.ZIndex = 7
+
+-- STATUS LABEL — single label replacing separator + warning + result
+local statusY = nextY(28, 0)
+local statusLbl = Instance.new("TextLabel", content)
+statusLbl.Size = UDim2.new(1,0,0,28); statusLbl.Position = UDim2.new(0,0,0,statusY)
+statusLbl.BackgroundTransparency = 1
+statusLbl.Text = "⚠️ Put the selected brainrot in the first slot to dupe!"
+statusLbl.Font = FONT; statusLbl.TextSize = 9; statusLbl.TextColor3 = C.midGray
+statusLbl.TextXAlignment = Enum.TextXAlignment.Center
+statusLbl.TextWrapped = true; statusLbl.LineHeight = 1.3; statusLbl.ZIndex = 6
+
+local isDuping = false
+
+local function setDupeActive(on)
+    TweenService:Create(dupeBg, TweenInfo.new(0.2), {BackgroundColor3 = on and Color3.fromRGB(220,220,220) or C.darkGray}):Play()
+    TweenService:Create(dupeBtn, TweenInfo.new(0.2), {TextColor3 = on and Color3.fromRGB(0,0,0) or C.lightGray}):Play()
+end
+
+dupeBtn.MouseEnter:Connect(function() if not isDuping then dupeBg.BackgroundColor3 = Color3.fromRGB(50,50,50) end end)
+dupeBtn.MouseLeave:Connect(function() if not isDuping then dupeBg.BackgroundColor3 = C.darkGray end end)
+
+dupeBtn.MouseButton1Click:Connect(function()
+    if isDuping then return end
+    isDuping = true
+    setDupeActive(true)
+    task.spawn(function()
+        local frames = {"DUPING.", "DUPING..", "DUPING..."}
+        local fi = 1
+        statusLbl.Font = Enum.Font.GothamBlack; statusLbl.TextColor3 = C.lightGray
+        while isDuping do
+            statusLbl.Text = frames[fi]; fi = (fi % #frames) + 1; task.wait(0.42)
+        end
+    end)
+    task.wait(3.5)
+    setDupeActive(false); dupeBtn.Text = "DUPE"; isDuping = false
+    statusLbl.TextTransparency = 1
+    statusLbl.Text = "Invalid brainrot! Put a valid brainrot."
+    statusLbl.Font = Enum.Font.GothamBlack; statusLbl.TextColor3 = C.red
+    TweenService:Create(statusLbl, TweenInfo.new(0.4), {TextTransparency=0}):Play()
+    task.delay(4, function()
+        if not isDuping then
+            TweenService:Create(statusLbl, TweenInfo.new(0.3), {TextTransparency=1}):Play()
+            task.wait(0.35)
+            statusLbl.Text = "Put the selected brainrot in the first slot to dupe."
+            statusLbl.Font = FONT; statusLbl.TextColor3 = C.midGray
+            TweenService:Create(statusLbl, TweenInfo.new(0.3), {TextTransparency=0}):Play()
+        end
+    end)
+end)
+
+local PILL_W = isTouch and 62 or 70
+local shortcutGui = Instance.new("Frame", sg)
+shortcutGui.Name = "Shortcut"
+shortcutGui.Size = UDim2.new(0, PILL_W, 0, 28)
+shortcutGui.Position = UDim2.new(1, -(PILL_W + 10), 0, 10)
+shortcutGui.BackgroundColor3 = C.bg; shortcutGui.BorderSizePixel = 0; shortcutGui.Visible = false
+Instance.new("UICorner", shortcutGui).CornerRadius = UDim.new(0, 10)
+attachAnimStroke(shortcutGui); spawnParticleDots(shortcutGui, 5, 1, 2); makeDraggable(shortcutGui)
+
+local expandBtn = Instance.new("TextButton", shortcutGui)
+expandBtn.Size = UDim2.new(1,-8,1,-8); expandBtn.Position = UDim2.new(0,4,0,4)
+expandBtn.BackgroundColor3 = C.darkGray; expandBtn.Text = "ERVO"
+expandBtn.Font = Enum.Font.GothamBlack; expandBtn.TextSize = isTouch and 9 or 10
+expandBtn.TextColor3 = C.white; expandBtn.BorderSizePixel = 0; expandBtn.ZIndex = 5
+Instance.new("UICorner", expandBtn).CornerRadius = UDim.new(0, 7)
+expandBtn.MouseEnter:Connect(function() expandBtn.BackgroundColor3 = Color3.fromRGB(50,50,50) end)
+expandBtn.MouseLeave:Connect(function() expandBtn.BackgroundColor3 = C.darkGray end)
+expandBtn.MouseButton1Click:Connect(function() shortcutGui.Visible = false; mainGui.Visible = true end)
+minBtn.MouseButton1Click:Connect(function() mainGui.Visible = false; shortcutGui.Visible = true end)
+
+local LOAD_DURATION = 15
+local lsDim = Instance.new("Frame", sg)
+lsDim.Size = UDim2.new(1,0,1,0); lsDim.BackgroundColor3 = Color3.fromRGB(0,0,0)
+lsDim.BackgroundTransparency = 0.45; lsDim.BorderSizePixel = 0; lsDim.ZIndex = 49
+
+local ls = Instance.new("Frame", sg)
+ls.Size = UDim2.new(0,380,0,160); ls.Position = UDim2.new(0.5,-190,0.5,-80)
+ls.BackgroundColor3 = Color3.fromRGB(8,8,8); ls.BorderSizePixel = 0; ls.ZIndex = 50; ls.ClipsDescendants = true
+Instance.new("UICorner", ls).CornerRadius = UDim.new(0,16)
+
+local lsStroke = Instance.new("UIStroke", ls); lsStroke.Thickness = 2
+local lsGrad = Instance.new("UIGradient", lsStroke)
+lsGrad.Color = ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.fromRGB(220,220,220)),ColorSequenceKeypoint.new(0.25,Color3.fromRGB(30,30,30)),ColorSequenceKeypoint.new(0.5,Color3.fromRGB(180,180,180)),ColorSequenceKeypoint.new(0.75,Color3.fromRGB(30,30,30)),ColorSequenceKeypoint.new(1,Color3.fromRGB(220,220,220))})
+task.spawn(function() local r=0; while ls.Parent do r=(r+4)%360; lsGrad.Rotation=r; task.wait(0.02) end end)
+
+local lrng = Random.new(77)
+for _ = 1, 18 do
+    local d = Instance.new("Frame", ls); d.BorderSizePixel = 0; d.ZIndex = 51
+    local sz = lrng:NextInteger(2,4); d.Size = UDim2.new(0,sz,0,sz)
+    local dx = lrng:NextNumber(0.02,0.98); local dy = lrng:NextNumber(0.05,0.95)
+    d.Position = UDim2.new(dx,0,dy,0); d.BackgroundColor3 = Color3.fromRGB(140,140,140)
+    d.BackgroundTransparency = lrng:NextNumber(0.4,0.7)
+    Instance.new("UICorner",d).CornerRadius = UDim.new(1,0)
+    local ph = lrng:NextNumber()*math.pi*2; local spd = 0.2+lrng:NextNumber()*0.3
+    task.spawn(function()
+        while d.Parent do
+            local t = tick()+ph
+            d.Position = UDim2.new(math.clamp(dx+math.sin(t*spd)*0.02,0.01,0.99),0,math.clamp(dy+math.cos(t*spd*0.7)*0.015,0.01,0.99),0)
+            d.BackgroundTransparency = 0.35+math.sin(t*1.5+ph)*0.3; task.wait(0.04)
+        end
+    end)
+end
+
+local lTitle = Instance.new("TextLabel", ls)
+lTitle.Size = UDim2.new(1,0,0,42); lTitle.Position = UDim2.new(0,0,0,18)
+lTitle.BackgroundTransparency = 1; lTitle.Text = " ✨ ERVO DRAGON DUPER"
+lTitle.Font = Enum.Font.GothamBlack; lTitle.TextSize = 22
+lTitle.TextColor3 = Color3.fromRGB(255,255,255); lTitle.ZIndex = 53; lTitle.TextXAlignment = Enum.TextXAlignment.Center
+task.spawn(function() while lTitle.Parent do lTitle.TextTransparency = 0.04+math.abs(math.sin(tick()*1.1))*0.1; task.wait(0.03) end end)
+
+local sepLs = Instance.new("Frame", ls)
+sepLs.Size = UDim2.new(0.8,0,0,1); sepLs.Position = UDim2.new(0.1,0,0,66)
+sepLs.BackgroundColor3 = Color3.fromRGB(60,60,60); sepLs.BorderSizePixel = 0; sepLs.ZIndex = 52
+
+local lSub = Instance.new("TextLabel", ls)
+lSub.Size = UDim2.new(1,0,0,20); lSub.Position = UDim2.new(0,0,0,74)
+lSub.BackgroundTransparency = 1; lSub.Text = "Initializing..."; lSub.Font = Enum.Font.GothamBold
+lSub.TextSize = 12; lSub.TextColor3 = Color3.fromRGB(110,110,110); lSub.ZIndex = 53; lSub.TextXAlignment = Enum.TextXAlignment.Center
+
+local pTrack = Instance.new("Frame", ls)
+pTrack.Size = UDim2.new(0.84,0,0,5); pTrack.Position = UDim2.new(0.08,0,1,-28)
+pTrack.BackgroundColor3 = Color3.fromRGB(28,28,28); pTrack.ZIndex = 53; pTrack.BorderSizePixel = 0
+Instance.new("UICorner",pTrack).CornerRadius = UDim.new(1,0)
+local pFill = Instance.new("Frame", pTrack)
+pFill.Size = UDim2.new(0,0,1,0); pFill.BackgroundColor3 = Color3.fromRGB(210,210,210)
+pFill.ZIndex = 54; pFill.BorderSizePixel = 0
+Instance.new("UICorner",pFill).CornerRadius = UDim.new(1,0)
+
+local pctLbl = Instance.new("TextLabel", ls)
+pctLbl.Size = UDim2.new(1,0,0,16); pctLbl.Position = UDim2.new(0,0,1,-48)
+pctLbl.BackgroundTransparency = 1; pctLbl.Text = "0%"; pctLbl.Font = Enum.Font.GothamBlack
+pctLbl.TextSize = 11; pctLbl.TextColor3 = Color3.fromRGB(80,80,80); pctLbl.ZIndex = 53; pctLbl.TextXAlignment = Enum.TextXAlignment.Center
+
+local ring = Instance.new("Frame", ls)
+ring.Size = UDim2.new(0,28,0,28); ring.Position = UDim2.new(0,16,0,18)
+ring.BackgroundTransparency = 1; ring.ZIndex = 53
+local rStroke = Instance.new("UIStroke",ring); rStroke.Thickness = 2.5
+rStroke.Color = Color3.fromRGB(200,200,200); rStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+Instance.new("UICorner",ring).CornerRadius = UDim.new(1,0)
+local rGrad = Instance.new("UIGradient",rStroke)
+rGrad.Color = ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.fromRGB(255,255,255)),ColorSequenceKeypoint.new(0.45,Color3.fromRGB(40,40,40)),ColorSequenceKeypoint.new(1,Color3.fromRGB(255,255,255))})
+task.spawn(function() local r=0; while ring.Parent do r=(r+7)%360; rGrad.Rotation=r; task.wait(0.02) end end)
+
+task.spawn(function()
+    local steps = {"Initializing...","Loading features...","Building GUI...","Almost ready...","Launching!"}
+    local elapsed = 0; local stepInterval = LOAD_DURATION / #steps; local nextStep = stepInterval; local si = 1
+    while elapsed < LOAD_DURATION and ls.Parent do
+        elapsed = elapsed + 0.05
+        local pct = math.min(elapsed / LOAD_DURATION, 1)
+        TweenService:Create(pFill, TweenInfo.new(0.05), {Size=UDim2.new(pct,0,1,0)}):Play()
+        pctLbl.Text = math.floor(pct*100) .. "%"
+        if elapsed >= nextStep and si <= #steps then lSub.Text = steps[si]; si = si+1; nextStep = nextStep+stepInterval end
+        task.wait(0.05)
+    end
+end)
+
+task.delay(LOAD_DURATION, function()
+    TweenService:Create(lsDim, TweenInfo.new(0.6), {BackgroundTransparency=1}):Play()
+    TweenService:Create(ls, TweenInfo.new(0.6, Enum.EasingStyle.Quad), {BackgroundTransparency=1}):Play()
+    for _, obj in ipairs(ls:GetDescendants()) do
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") then TweenService:Create(obj, TweenInfo.new(0.45), {TextTransparency=1}):Play() end
+        if obj:IsA("Frame") or obj:IsA("TextButton") then TweenService:Create(obj, TweenInfo.new(0.45), {BackgroundTransparency=1}):Play() end
+        if obj:IsA("UIStroke") then TweenService:Create(obj, TweenInfo.new(0.45), {Transparency=1}):Play() end
+    end
+    task.wait(0.7)
+    if ls.Parent then ls:Destroy() end; if lsDim.Parent then lsDim:Destroy() end
+    mainGui.Visible = true; shortcutGui.Visible = false
+end)
